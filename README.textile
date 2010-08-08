@@ -7,13 +7,13 @@ h1. Communication
 
 * Connecting with another player
 * Stone placement: 
-##place stone,
-##check for legality,
-##check for consequences (captured stones), 
-##update game state, 
-##refresh boards
-*Enable back and forth comments during game
-*Output game record as .sgf file
-*Endgame: calculate score, declare winner
+## place stone,
+## check for legality,
+## check for consequences (captured stones), 
+## update game state, 
+## refresh boards
+* Enable back and forth comments during game
+* Output game record as .sgf file
+* Endgame: calculate score, declare winner
 
 p. Some of these -- certainly score calculation, even checking for legality -- we may want to put off to secondary phases. These tasks could just be left up to the human player for the initial phase.
