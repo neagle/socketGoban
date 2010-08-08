@@ -13,24 +13,27 @@ table#goban {
     background-color: #E6AC5E;
     background-image: url(images/goban.jpg);
     border-collapse: collapse;
+    height: 500px;
     margin: 2em auto;
     -moz-box-shadow: 0 0 1em hsla(0, 0%, 0%, 0.5);
+    table-layout: fixed;
     text-shadow: 0 1px hsla(0, 50%, 100%, 0.5);
+    -webkit-box-shadow: 0 0 1em hsla(0, 0%, 0%, 0.5);
+    width: 500px;
 }
 
 table#goban th {
-    height: 50px;
-    width: 50px;
+    font-size: 0.75em;
 }
 
 table#goban td {
     background-image: url(images/grid-intersection.png);
     background-position: 50% 50%;
-    height: 50px;
+    xheight: 50px;
     margin: 0;
     padding: 0;
     position: relative;
-    width: 50px;
+    xwidth: 50px;
 }
 
 div.grid {
@@ -77,19 +80,19 @@ table#goban tr.last td:last-of-type {
 
 table#goban tr.starpoint td.starpoint {
     background-image:  url(images/grid-starpoint.png);
-};
+}
 
 span.stone {
     display: block;
-    height: 50px;
+    height: 100%;
     margin: 0;
-    -moz-border-radius: 25px;
+    -moz-border-radius: 50%;
     -moz-box-shadow: 0 0 0.7em hsla(0, 0%, 0%, 0.7);
     padding: 0;
     position: relative;
-    -webkit-border-radius: 25px;
+    -webkit-border-radius: 50%;
     -webkit-box-shadow: 0 0 0.7em hsla(0, 0%, 0%, 0.7);
-    width: 50px;
+    width: 100%;
 }
 
 span.stone.white {

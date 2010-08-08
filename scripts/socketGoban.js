@@ -67,6 +67,14 @@ SG.Goban.prototype = {
             this.rows.push(row);
         }
 
+        // Set computed height / width of tds explicitly so that stones can be set to 100% height/width
+        this.goban.find('td').each(function(i, item) {
+            var $item = $(item);
+            $item.css({
+                height: $item.height(),
+                width: $item.width()
+            }); 
+        });
     },
     getAt: function(coordinates) {
         var row = this.rows[coordinates.y];
