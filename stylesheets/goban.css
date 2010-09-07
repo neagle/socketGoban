@@ -77,15 +77,17 @@ table#goban tr.starpoint td.starpoint {
 
 span.stone {
     display: block;
-    height: 100%;
+    height: 45px;
+    xheight: 100%;
     margin: 0;
-    -moz-border-radius: 50%;
+    -moz-border-radius: 22.5px;
     -moz-box-shadow: 0 0 0.7em hsla(0, 0%, 0%, 0.7);
     padding: 0;
     position: relative;
-    -webkit-border-radius: 50%;
+    -webkit-border-radius: 22.5px;
     -webkit-box-shadow: 0 0 0.7em hsla(0, 0%, 0%, 0.7);
-    width: 100%;
+    xwidth: 100%;
+    width: 45px;
 }
 
 span.stone.white {

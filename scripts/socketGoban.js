@@ -4,17 +4,52 @@ var SG = SG || {};
 // Define constants
 var ALPHALABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-// vars
-var defaultConfig = {
-    rows: 9,
-    cols: 9
-}
-
-SG.Goban = function(config) { this.init(config); };
+SG.Goban = function(config) { this.init.call(this, config); };
 SG.Goban.prototype = {
     init: function(config) {
-        this.config = config || defaultConfig;
+        console.log('Goban init');
+        this.config = $.extend({}, this.defaults, config);
+        this.intersections = [];
         this.render();
+
+        var players = this.config.players;
+        this.players = $([players.black, players.white]);
+
+        this.players.trigger('join', this);
+        for (player in this.config.players) {
+           console.log('Player:', players[player]);
+            if (players[player].config.playsFirst) {
+               $(players[player]).trigger('onTurnBegin')
+               break;
+            }
+        }
+
+        this.addListeners();
+    },
+    defaults: {
+        rows: 9,
+        cols: 9,
+        players: {
+            black: null,
+            white: null
+        }
+    },
+    addListeners: function() {
+        $(this).bind('turn', this.onTurn); 
+    },
+    onTurn: function(e, player) {
+        // server call
+        player = $(player);
+        player.trigger('turncomplete');
+        otherPlayer = this.players.not(player);
+        console.log(otherPlayer);
+        otherPlayer.trigger('turnbegin');
+
+        /*
+        this.config.players[othercolor]
+        othercolor = player.config.color=='black':'white':'black';
+        otherPlayer = (player.config.color == 'black') ? '
+        */
     },
     getState: function() {
     },
@@ -53,14 +88,22 @@ SG.Goban.prototype = {
                         text: (i==0||i==this.config.rows+1) ? '' : i 
                     }).appendTo(row);;
                 } else {
-                    var cell = $('<td />', {
+                    var intersection = $('<td />', {
                         'class': 'goban-intersection col-' + (j+1)
                     }).appendTo(row);
 
-                    // Add a class for the starpoint cell
+                    // Add coordinates as data
+                    intersection.data({
+                        x: j,
+                        y: i
+                    }); 
+
+                    // Add a class for the starpoint intersection 
                     if ((i == (this.config.rows + 1) / 2) && (j == (this.config.cols + 1) / 2)) {
-                        cell.addClass('starpoint');
+                        intersection.addClass('starpoint');
                     }
+
+                    this.intersections.push(intersection);
                 }
             } 
 
@@ -78,18 +121,26 @@ SG.Goban.prototype = {
     },
     getAt: function(coordinates) {
         var row = this.rows[coordinates.y];
-        var intersection = row.children('td:eq(' + (coordinates.x-1) + ')');
+        var intersection = row.children('td').eq(coordinates.x-1);
         return intersection;
     },
     placeStone: function(config) {
-        var stone = $('<span />', {
-            'class': 'stone'
-        });
         var intersection = this.getAt(config.coordinates),
-            existing = intersection.children('span');
-        var stone = existing.length ? existing : stone.appendTo(intersection);
-        stone.removeClass('black white').addClass(config.color);
-        return true;
+            existing = intersection.children('span'),
+            stone;
+        //var stone = existing.length ? existing : stone.appendTo(intersection);
+        if (existing.length) {
+            stone = $(existing[0]);
+            stone.removeClass('black white').addClass(config.color);
+        } else {
+            stone = $('<span />', {
+                'class': 'stone ' + config.color,
+            });
+            stone.appendTo(intersection);
+        }
+        // stone.removeClass('black white').addClass(config.color);
+        //stone.addClass(config.color);
+        return stone;
     },
     removeStone: function(config) {
         var intersection = this.getAt(config.coordinates);
@@ -97,13 +148,55 @@ SG.Goban.prototype = {
     }
 }
 
+SG.Player = function(config) { this.init.call(this, config); };
+SG.Player.prototype = {
+    init: function(config) {
+        this.config = $.extend(this.config || {}, 
+                               this.defaults, 
+                               config);
+        $(this).bind('join', $.proxy(this.onJoin, this));
+        //console.log($(this));
+    },
+    defaults: {
+        color: 'black',
+        playsFirst: false 
+    },
+    onJoin: function(e, goban) {
+        console.log(goban);
+        this.goban = goban;
+        console.log('join');
+        this.clickHandlers();
+    },
+    clickHandlers: function() {
+        console.log(this.goban);
+        var gb = this.goban.goban;
+        // console.log(gb);
+        $(this).bind('turnbegin', $.proxy(this.onTurnBegin, this));
+        $(this).bind('turncomplete', $.proxy(this.onTurnComplete, this));
+    },
+    onClick: function(e) {
+        console.log(this.config.color, this.config.playsFirst);
+        if (!this.config.playsFirst) { return; }
+        var intersection = $(e.target).closest('td'),
+            coordinates = intersection.data();
 
-// Config variables
+        this.goban.placeStone({
+            coordinates: coordinates,
+            color: this.config.color
+        });
 
-// Build the board
-
-
-
-// Communication functions
+        $(this.goban).trigger('turn', this);
+    },
+    onTurnBegin: function(e) {
+        console.log(this.config.color, 'beginning turn');
+        this.goban.goban.bind('click', $.proxy(this.onClick, this));
+        this.config.playsFirst = true;
+    },
+    onTurnComplete: function(e) {
+        console.log(this.config.color, 'ending turn');
+        this.goban.goban.unbind('click', $.proxy(this.onClick, this));
+        this.config.playsFirst = false;
+    }
+}
 
 })(jQuery);

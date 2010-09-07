@@ -13,10 +13,26 @@
 <script type="text/javascript" src="scripts/socketGoban.js"></script>
 
 <script type="text/javascript">
-
+    var myGoban;
 
     $(document).ready(function() {
-        myGoban = new SG.Goban();
+        var black = new SG.Player({
+            color: 'black',
+            playsFirst: true 
+        });
+        var white = new SG.Player({
+            color: 'white'
+        });
+        myGoban = new SG.Goban({
+            players: {
+                white: white,
+                black: black
+            }
+        });
+
+        var fakeServer = function() {
+
+        }
     });
 
 
