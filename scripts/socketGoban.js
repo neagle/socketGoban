@@ -1,17 +1,68 @@
+/*
+INITIALIZE
+1. Tell server want to join
+2. Server says:
+    a. You are first, must wait for player
+    b. You are second, game should begin
+    c. No slots
+3. Begin game
+    a. Set black and white players 
+    b. Begin black's turn
+
+TURN
+
+ENDGAME
+*/
 var SG = SG || {};
 (function($) {
 
 // Define constants
 var ALPHALABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+function log(msg) {
+    $('#log').append($('<p />', {
+        text: msg
+    }));
+}
+
+SG.Server = function() {
+    this.socket = new WebSocket('ws://nateeagle.com:8080/goban');
+    this.socket.readyState = 1;
+    SG.socket = this.socket;
+    this.socket.onmessage = this.onmessage;
+}
+
+
+SG.Server.prototype = {
+    register: function() {
+        this.send('register', {});
+    },
+    send: function(eventName, data) {
+        o = {
+            event: eventName,
+            data: data
+        }
+        o = $.toJSON(o);
+        this.socket.send(o);
+    },
+    onmessage: function(event) {
+        event = $.evalJSON(event.data);
+        $(this).trigger(event.event, [event.data]);
+    }
+}
+
 SG.Goban = function(config) { this.init.call(this, config); };
 SG.Goban.prototype = {
     init: function(config) {
         console.log('Goban init');
+        this.server = new SG.Server();
         this.config = $.extend({}, this.defaults, config);
         this.intersections = [];
+
         this.render();
 
+
+        /*
         var players = this.config.players;
         this.players = $([players.black, players.white]);
 
@@ -23,6 +74,11 @@ SG.Goban.prototype = {
                break;
             }
         }
+        */
+
+        this.server.register();
+        
+        $(this).bind('joinedgame', log);
 
         this.addListeners();
     },
@@ -59,7 +115,7 @@ SG.Goban.prototype = {
         // Create a table
         this.goban = $('<table />', {
             id: 'goban'
-        }).appendTo('body');
+        }).prependTo('body');
 
         // Fill the table with rows/cols
         this.rows = [];
@@ -198,5 +254,6 @@ SG.Player.prototype = {
         this.config.playsFirst = false;
     }
 }
+
 
 })(jQuery);
