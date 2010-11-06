@@ -1,0 +1,28 @@
+<div id="message"></div>
+
+<input type="text" id='msg'/>
+<button id="hi" onclick="sendMessage();">Send</button>
+<script>
+
+var myname = prompt('What is your name?');
+
+var ws = new WebSocket('ws://nateeagle.com:8080/echo');
+//var ws = new WebSocket('ws://superstarsawesomeleague.com:8080/goban_chat');
+
+ws.onopen = function(event) {}
+
+ws.onmessage = function(event) {
+    console.log(event);
+    document.getElementById('message').innerHTML+=event.data + '<br />';
+}
+
+function sendMessage() {
+    var msg = document.getElementById('msg').value;
+    console.log('Sending message:', msg);
+    ws.send(myname + '|' + msg);
+    console.log('sent!');
+}
+
+document.getElementById('msg').focus();
+
+</script>

@@ -26,15 +26,14 @@ function log(msg) {
 }
 
 SG.Server = function() {
-    this.socket = new WebSocket('ws://nateeagle.com:8080/goban');
-    this.socket.readyState = 1;
-    SG.socket = this.socket;
-    this.socket.onmessage = this.onmessage;
+    this.socket = new WebSocket('ws://nateeagle.com:8080/');
+    this.socket.onmessage = $.proxy(this.onmessage, this);
 }
 
 
 SG.Server.prototype = {
     register: function() {
+        console.log('Registered.');
         this.send('register', {});
     },
     send: function(eventName, data) {
@@ -47,6 +46,21 @@ SG.Server.prototype = {
     },
     onmessage: function(event) {
         event = $.evalJSON(event.data);
+
+        /*
+        console.log(event.event);
+        var events = $(this).data('events');
+        console.log(events);
+        jQuery.each(events, function(key, handlerObj) {
+          console.log(handlerObj); // alerts "function() { alert('clicked!') }"
+        });
+        */
+
+        if (event.data.message) {
+            log(event.data.message);
+        }
+            
+        console.log('event.data:', event.data);
         $(this).trigger(event.event, [event.data]);
     }
 }
@@ -75,23 +89,63 @@ SG.Goban.prototype = {
             }
         }
         */
-
-        this.server.register();
-        
-        $(this).bind('joinedgame', log);
-
         this.addListeners();
     },
     defaults: {
         rows: 9,
         cols: 9,
-        players: {
-            black: null,
-            white: null
-        }
+        player: null
     },
     addListeners: function() {
-        $(this).bind('turn', this.onTurn); 
+        /*
+        * GAME EVENTS
+        * join (ip) => player/kibitz
+        * startGame => null
+        * turnStart => player
+        * beforeturnend => legal
+        *   - evaluateLegality
+        *   - captureStones
+        * turnEnd => boardstate
+        *   - pass
+        * endGame
+        * leave
+        */
+        console.log('Add event listeners');
+        $(this.server).bind('startgame', $.proxy(this.onStartGame, this)); 
+        $(this.server).bind('ready', this.server.register);
+        $(this.server).bind('joinedgame', $.proxy(this.onJoinedGame, this));
+        $(this.server).bind('turnbegin', $.proxy(this.onTurnBegin, this));
+        $(this.server).bind('turnend', $.proxy(this.onTurnEnd, this));
+        $(this).bind('playerturn', $.proxy(this.onPlayerTurn, this));
+    },
+    onJoinedGame: function(e, data) {
+        this.player = this.player || new SG.Player(data.player);
+        this.$player = this.$player || $(this.player);
+        console.log(this.player);
+    },
+    onStartGame: function(e) {
+        console.log('onStartGame...');
+        // UI Stuff
+        this.player.goban = this;
+        this.player.clickHandlers();
+
+        this.server.send('playerready', {}); 
+    },
+    onTurnBegin: function(e, data) {
+        if (data.player.ip === this.player.config.ip) {
+            console.log('It\'s my turn.'); 
+            this.$player.trigger('turnbegin');
+        } 
+    },
+    onPlayerTurn: function(e) {
+        console.log('onPlayerTurn...');
+        this.server.send('playerturn', {});
+    },
+    onTurnEnd: function(e, data) {
+        if (data.player.ip === this.player.config.ip) {
+            console.log('Ending my turn'); 
+            this.$player.trigger('turnend');
+        } 
     },
     onTurn: function(e, player) {
         // server call
@@ -215,24 +269,20 @@ SG.Player.prototype = {
     },
     defaults: {
         color: 'black',
-        playsFirst: false 
+        ip: null,
+        ready: null
     },
     onJoin: function(e, goban) {
-        console.log(goban);
-        this.goban = goban;
-        console.log('join');
-        this.clickHandlers();
     },
     clickHandlers: function() {
         console.log(this.goban);
         var gb = this.goban.goban;
         // console.log(gb);
         $(this).bind('turnbegin', $.proxy(this.onTurnBegin, this));
-        $(this).bind('turncomplete', $.proxy(this.onTurnComplete, this));
+        $(this).bind('turnend', $.proxy(this.onTurnComplete, this));
     },
     onClick: function(e) {
-        console.log(this.config.color, this.config.playsFirst);
-        if (!this.config.playsFirst) { return; }
+        console.log(this.config.color);
         var intersection = $(e.target).closest('td'),
             coordinates = intersection.data();
 
@@ -241,17 +291,17 @@ SG.Player.prototype = {
             color: this.config.color
         });
 
-        $(this.goban).trigger('turn', this);
+        //this.goban.onPlayerTurn(this);
+
+        $(this.goban).trigger('playerturn', this);
     },
     onTurnBegin: function(e) {
         console.log(this.config.color, 'beginning turn');
         this.goban.goban.bind('click', $.proxy(this.onClick, this));
-        this.config.playsFirst = true;
     },
     onTurnComplete: function(e) {
         console.log(this.config.color, 'ending turn');
         this.goban.goban.unbind('click', $.proxy(this.onClick, this));
-        this.config.playsFirst = false;
     }
 }
 
